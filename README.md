@@ -1,27 +1,42 @@
 # VisionQC — AI Steel Surface Defect Inspector
 
-VisionQC is a deep-learning computer vision project for automatic steel surface defect classification.
+VisionQC is a deep-learning computer vision application for automatic steel surface defect classification.
 
-The system uses a fine-tuned **ResNet18** model to classify steel surface images into six defect categories and uses **Grad-CAM explainability** to highlight the image regions that most influenced the model's prediction.
+The system uses a fine-tuned **ResNet18** model to classify steel surface images into six defect categories. It also uses **Grad-CAM explainability** to highlight the image regions that most influenced each prediction.
 
-The project covers the complete machine-learning workflow from dataset exploration and CNN development to transfer learning, model evaluation, explainability, and Streamlit deployment.
+This project covers the complete machine-learning workflow from dataset exploration and CNN development to transfer learning, fine-tuning, evaluation, explainable AI, and deployment with Streamlit.
+
+---
+
+## Live Demo
+
+The public Streamlit application will be added here after deployment.
+
+---
+
+## GitHub Repository
+
+https://github.com/SwanHtetHarry/visionqc-steel-defect
 
 ---
 
 ## Features
 
-- Steel surface defect classification using deep learning
-- Fine-tuned ResNet18 model
-- Six supported defect classes
-- Transfer learning from ImageNet
-- Custom CNN baseline comparison
+- Deep-learning steel defect classification
+- Fine-tuned ResNet18 architecture
+- Six supported steel surface defect classes
+- Transfer learning using ImageNet pretrained weights
+- Custom CNN baseline
+- Model comparison
+- Data augmentation
+- Model checkpointing
 - Grad-CAM visual explainability
 - Prediction confidence
+- Confusion matrix evaluation
+- Precision, recall, and F1-score evaluation
+- Held-out test set
 - Streamlit web application
-- Held-out test-set evaluation
-- Balanced train, validation, and test splits
-- Model checkpointing
-- Confusion matrix and classification report evaluation
+- Upload-and-analyze interface
 
 ---
 
@@ -30,10 +45,10 @@ The project covers the complete machine-learning workflow from dataset explorati
 VisionQC classifies steel surface images into six categories:
 
 1. **Crazing** — fine crack-like patterns across the steel surface
-2. **Inclusion** — foreign material or impurities embedded in the surface
-3. **Patches** — irregular surface regions with noticeable texture differences
-4. **Pitted Surface** — small pits or depressions across the surface
-5. **Rolled-in Scale** — oxide scale pressed into the steel during rolling
+2. **Inclusion** — foreign material or impurities embedded in the steel surface
+3. **Patches** — irregular regions with noticeable texture or appearance differences
+4. **Pitted Surface** — small pits or depressions distributed across the surface
+5. **Rolled-in Scale** — oxide scale pressed into steel during the rolling process
 6. **Scratches** — linear surface damage caused by mechanical contact or abrasion
 
 ---
@@ -61,66 +76,72 @@ Predicted Defect         Prediction Confidence
 Grad-CAM Explainability
         |
         v
-Highlighted Defect Region
+Highlighted Important Region
 ```
+
+The model analyzes the uploaded image and produces a predicted defect class.
+
+Grad-CAM is then used to visualize the regions that contributed most strongly to the model's prediction.
 
 ---
 
 ## Dataset
 
-The project uses the **NEU Surface Defect Database**, containing 1,800 steel surface images across six primary defect categories.
+The project uses the **NEU Surface Defect Database**.
 
-Each primary class contains 300 images.
-
-The project originally contained:
+The dataset contains:
 
 ```text
-1800 total images
-6 defect classes
-300 images per primary class
+Total Images: 1800
+Defect Classes: 6
+Images per Primary Class: 300
+Image Size: 200 × 200
+Image Mode: RGB
 ```
 
-During dataset exploration, the XML annotations also revealed that some images contain multiple annotated defect regions.
+The original dataset also contains XML annotation files describing defect types and bounding-box locations.
 
-This project therefore uses the filename-defined primary defect class for the initial six-class image classification task.
+During exploratory analysis, some images were found to contain more than one annotated defect type.
 
-The annotation information can later be reused for multi-label classification and object detection.
+For the initial classification task, the primary class represented in the filename was used as the image label.
+
+The annotation data can later support multi-label classification and object detection.
 
 ---
 
 ## Dataset Exploration
 
-Before model training, the dataset was inspected for:
+Before training, the dataset was inspected for:
 
 - Image count
-- Class balance
+- Class distribution
 - Image dimensions
 - Image color mode
-- Annotation availability
-- Image/annotation mismatches
-- Multiple defects within individual images
-- Duplicate images across dataset splits
+- Missing annotations
+- Annotation/image mismatches
+- Multiple defect classes within images
+- Exact duplicate files between dataset splits
 
-All 1,800 images were confirmed to be:
+All 1,800 images were confirmed to have:
 
 ```text
-Size: 200 × 200 pixels
-Mode: RGB
+Image Size: 200 × 200
+Image Mode: RGB
 ```
 
-The project also identified and corrected one misplaced annotation file during dataset inspection.
+One misplaced annotation file was identified during exploration and corrected.
 
-Exact file hashing was later used to check for duplicate images across the original training and validation folders.
+An exact file-hash comparison was also performed.
 
 ```text
-Exact duplicate images found: 0
+Exact duplicate images across original train/validation folders: 0
 ```
 
 ---
 
 ## Final Dataset Split
 
-For the final experiment, the full dataset was divided using a fixed stratified split:
+For the final experiment, all 1,800 images were divided using a fixed stratified split.
 
 ```text
 Training:   70% = 1260 images
@@ -128,60 +149,77 @@ Validation: 15% = 270 images
 Test:       15% = 270 images
 ```
 
-Each class contains:
+Each defect class contains:
 
 ```text
 Training:   210 images
-Validation:  45 images
-Test:        45 images
+Validation: 45 images
+Test:       45 images
 ```
 
-The split is stored in:
+The exact split is stored in:
 
 ```text
 data/final_splits.csv
 ```
 
-The test set was kept separate from model training and checkpoint selection during the final clean experiment.
+The model learns only from the training set.
+
+The validation set is used for model selection and checkpointing.
+
+The test set is reserved for final evaluation.
 
 ---
 
 ## Image Preprocessing
 
-Images are prepared using PyTorch and Torchvision.
+Images are processed using PyTorch and Torchvision.
 
-The preprocessing pipeline includes:
+### Training Pipeline
 
 ```text
 Original Image
 200 × 200
-    |
-    v
+      |
+      v
 Resize
 224 × 224
-    |
-    v
-Training Augmentation
-    |
-    +-- Random Horizontal Flip
-    +-- Random Rotation
-    |
-    v
+      |
+      v
+Random Horizontal Flip
+      |
+      v
+Random Rotation
+      |
+      v
 Convert to Tensor
-    |
-    v
+      |
+      v
 ImageNet Normalization
 ```
 
-Validation and test images are not randomly augmented.
+### Validation and Test Pipeline
 
-ImageNet normalization values are used because the final model uses pretrained ResNet18 weights.
+```text
+Original Image
+      |
+      v
+Resize to 224 × 224
+      |
+      v
+Convert to Tensor
+      |
+      v
+ImageNet Normalization
+```
+
+Random augmentation is applied only to training images.
 
 ---
 
 ## Model Development
 
-Three main model stages were explored.
+The project was developed through three main modeling stages.
 
 ### 1. Custom CNN
 
@@ -195,7 +233,7 @@ A convolutional neural network was built from scratch using:
 - Cross-entropy loss
 - Adam optimizer
 
-The custom CNN served as the project baseline.
+The custom CNN served as the baseline model.
 
 It achieved approximately:
 
@@ -203,81 +241,57 @@ It achieved approximately:
 Validation Accuracy: ~90%
 ```
 
-The model performed strongly on several classes but had difficulty recognizing the **Inclusion** class.
+The main weakness was recognizing the **Inclusion** class.
 
 ---
 
-### 2. ResNet18 Transfer Learning
+## 2. ResNet18 Transfer Learning
 
 A pretrained ResNet18 model was then used.
 
-The pretrained convolutional layers were frozen, and only the final classification layer was trained for the six steel defect classes.
+Most pretrained layers were initially frozen, while the final classification layer was replaced with a six-class output layer.
 
-This improved performance to approximately:
+```text
+Original ResNet18:
+512 features
+      |
+      v
+1000 ImageNet classes
+```
+
+was changed to:
+
+```text
+VisionQC ResNet18:
+512 features
+      |
+      v
+6 steel defect classes
+```
+
+The frozen ResNet18 achieved approximately:
 
 ```text
 Validation Accuracy: 93.33%
 ```
 
-Transfer learning also improved Inclusion recall compared with the custom CNN.
+It also improved Inclusion recall compared with the custom CNN.
 
 ---
 
-### 3. Fine-Tuned ResNet18
+## 3. Fine-Tuned ResNet18
 
-The final ResNet block (`layer4`) was unfrozen and trained using a smaller learning rate.
+The final ResNet block (`layer4`) was unfrozen and trained with a smaller learning rate.
 
-This allowed the pretrained visual features to adapt specifically to steel surface textures.
+This allowed the model's higher-level visual features to adapt specifically to steel surface textures.
 
-During the clean final experiment, the best fine-tuned checkpoint achieved:
-
-```text
-Validation Accuracy: 100.00%
-```
-
-The final model was selected using validation performance before evaluation on the held-out test split.
-
----
-
-## Final Test Results
-
-The final fine-tuned ResNet18 was evaluated on the held-out test split containing 270 images.
-
-### Test Accuracy
+The final fine-tuned model achieved:
 
 ```text
-Final Test Accuracy: 100.00%
+Best Validation Accuracy: 100.00%
 ```
 
-The test set contained:
-
-```text
-45 Crazing images
-45 Inclusion images
-45 Patches images
-45 Pitted Surface images
-45 Rolled-in Scale images
-45 Scratches images
-```
-
-The model correctly classified all 270 images in this particular held-out split.
-
-### Classification Report
-
-```text
-Class              Precision    Recall    F1-Score
-
-Crazing               1.00       1.00       1.00
-Inclusion             1.00       1.00       1.00
-Patches               1.00       1.00       1.00
-Pitted Surface        1.00       1.00       1.00
-Rolled-in Scale       1.00       1.00       1.00
-Scratches             1.00       1.00       1.00
-
-Overall Accuracy                           1.00
-```
-
-These results represent performance on this specific NEU dataset split and should not be interpreted as guaranteed 100% performance on real-world industrial images.
+during the final clean training experiment.
 
 ---
 
@@ -290,13 +304,57 @@ These results represent performance on this specific NEU dataset split and shoul
 | Fine-Tuned ResNet18 | 100.00% validation accuracy |
 | **Final Fine-Tuned ResNet18** | **100.00% on 270-image held-out test split** |
 
-One particularly important improvement occurred for the Inclusion class.
+One important improvement occurred in the Inclusion class.
 
 ```text
 Custom CNN Inclusion Recall:      58%
 Frozen ResNet18 Inclusion Recall: 65%
-Fine-Tuned ResNet18:             100% on evaluated split
+Fine-Tuned ResNet18:             100% on evaluated final split
 ```
+
+---
+
+## Final Test Evaluation
+
+The final fine-tuned ResNet18 checkpoint was evaluated on the held-out test set containing 270 images.
+
+```text
+Test Images: 270
+Correct Predictions: 270
+Final Test Accuracy: 100.00%
+```
+
+The test set contained:
+
+```text
+Crazing:          45
+Inclusion:        45
+Patches:          45
+Pitted Surface:   45
+Rolled-in Scale:  45
+Scratches:        45
+```
+
+### Final Classification Report
+
+```text
+Class               Precision    Recall    F1-Score
+
+Crazing                1.0000     1.0000     1.0000
+Inclusion              1.0000     1.0000     1.0000
+Patches                1.0000     1.0000     1.0000
+Pitted Surface         1.0000     1.0000     1.0000
+Rolled-in Scale        1.0000     1.0000     1.0000
+Scratches              1.0000     1.0000     1.0000
+
+Overall Accuracy                            1.0000
+Macro Average           1.0000     1.0000     1.0000
+Weighted Average        1.0000     1.0000     1.0000
+```
+
+These results represent performance on this specific held-out NEU dataset split.
+
+They should not be interpreted as guaranteed 100% accuracy on real-world industrial images.
 
 ---
 
@@ -304,20 +362,23 @@ Fine-Tuned ResNet18:             100% on evaluated split
 
 VisionQC uses **Gradient-weighted Class Activation Mapping (Grad-CAM)** to explain model predictions.
 
-Instead of displaying only:
+A normal classifier might only return:
 
 ```text
 Prediction: Patches
 Confidence: 99.95%
 ```
 
-the application also generates a heatmap showing which areas of the image had the strongest influence on the prediction.
+VisionQC also creates a heatmap showing which image regions most influenced that prediction.
 
 ```text
 Steel Image
      |
      v
-ResNet18 Prediction
+ResNet18
+     |
+     v
+Prediction
      |
      v
 Grad-CAM
@@ -326,26 +387,26 @@ Grad-CAM
 Highlighted Important Region
 ```
 
-Warm-colored regions in the visualization represent areas that contributed more strongly to the model's decision.
+Warm colors indicate areas that had a stronger influence on the model's decision.
 
-Grad-CAM does not prove that a model's reasoning is correct, but it provides useful insight into where the network focused when making a prediction.
+Grad-CAM improves interpretability but does not guarantee that the model's reasoning is correct.
 
 ---
 
 ## Streamlit Application
 
-The Streamlit application allows users to:
+The VisionQC application allows the user to:
 
 - Upload a steel surface image
 - Run AI defect classification
-- View the predicted defect
+- View the detected defect
 - View prediction confidence
-- Read a short defect description
+- Read a defect description
 - View the original image
-- View the Grad-CAM explanation
-- Compare the original image and AI attention side by side
+- View a Grad-CAM explanation
+- Compare the original image and Grad-CAM side by side
 
-Example output:
+Example:
 
 ```text
 Inspection Result
@@ -384,13 +445,30 @@ visionqc-steel-defect/
 └── src/
 ```
 
-The raw training and validation images are excluded from GitHub through `.gitignore`.
+The raw image dataset is excluded from GitHub to keep the repository smaller.
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/SwanHtetHarry/visionqc-steel-defect
+cd visionqc-steel-defect
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
 ## Requirements
 
-Main dependencies:
+The main project dependencies are:
 
 ```text
 streamlit
@@ -403,30 +481,11 @@ scikit-learn
 pandas
 ```
 
-Install all dependencies with:
-
-```bash
-pip install -r requirements.txt
-```
-
 ---
 
 ## Run the Application
 
-Clone the repository:
-
-```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
-cd visionqc-steel-defect
-```
-
-Install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the Streamlit application:
+Run:
 
 ```bash
 streamlit run app.py
@@ -466,16 +525,19 @@ in your browser.
 
 ## Key Concepts Learned
 
-This project covers several important deep-learning concepts:
+This project covers:
 
+- Computer vision
 - Image classification
+- Deep learning
 - Convolutional Neural Networks
 - Convolution layers
 - ReLU activation
 - Max pooling
 - Data augmentation
 - Tensors
-- DataLoaders
+- PyTorch Dataset
+- PyTorch DataLoader
 - Batch training
 - Cross-entropy loss
 - Backpropagation
@@ -485,47 +547,96 @@ This project covers several important deep-learning concepts:
 - Model checkpointing
 - Transfer learning
 - Fine-tuning
+- ResNet architecture
 - Confusion matrices
 - Precision
 - Recall
 - F1-score
+- Held-out test evaluation
 - Explainable AI
 - Grad-CAM
-- Held-out test evaluation
-- Model deployment
+- Streamlit deployment
 
 ---
 
 ## Limitations
 
-Although the model achieved excellent results on the held-out NEU dataset split, several limitations remain:
+Although the model achieved excellent performance on the NEU dataset, several limitations remain:
 
-- The NEU dataset is relatively small.
-- Images come from a controlled dataset rather than live industrial production.
-- Real manufacturing environments may contain lighting, camera, material, and surface variations not represented in the dataset.
-- Some dataset images contain multiple annotated defects while the current classifier predicts only one primary class.
+- The dataset is relatively small.
+- The images come from a controlled dataset.
+- Real industrial environments may contain different lighting conditions.
+- Different cameras may produce different image characteristics.
+- Steel types and textures may differ from the training dataset.
+- Some images contain multiple annotated defect types.
+- The current classifier predicts one primary class per image.
 - Visually similar images may exist even when exact duplicate files do not.
-- Model confidence is not a guarantee that a prediction is correct.
+- Prediction confidence is not a guarantee of correctness.
 - Grad-CAM shows influential regions but does not prove causal reasoning.
-- The current system performs classification rather than defect localization.
-- The model has not yet been validated against an independent external industrial dataset.
+- The model has not yet been validated using a completely independent industrial dataset.
+- The current model classifies defects but does not precisely localize them with bounding boxes.
 
-Because of these limitations, the reported 100% held-out test accuracy should not be interpreted as guaranteed real-world industrial performance.
+Therefore, the reported 100% held-out test accuracy should not be interpreted as guaranteed real-world industrial performance.
 
 ---
 
 ## Future Improvements
 
-Planned improvements include:
+Possible future improvements include:
 
 - Multi-label defect classification
-- YOLO-based object detection
+- YOLO object detection
 - Defect bounding boxes
-- Defect localization
+- Automatic defect localization
 - External dataset validation
-- Additional industrial datasets
-- More advanced augmentation
+- Additional steel defect datasets
 - EfficientNet comparison
-- Additional transfer-learning architectures
-- Hyperparameter tuning
-- Batch image
+- Additional pretrained architectures
+- Hyperparameter optimization
+- Advanced data augmentation
+- Defect severity estimation
+- Batch inspection
+- Inspection history
+- Industrial analytics dashboard
+- Real-time camera inspection
+- Real-time production-line integration
+- Model monitoring
+
+A future object-detection version could produce:
+
+```text
+Steel Image
+        |
+        v
+
++-----------------------------+
+|                             |
+|   [Crazing 97%]             |
+|                             |
+|                [Patch 91%]  |
+|                             |
++-----------------------------+
+```
+
+---
+
+## Disclaimer
+
+VisionQC is intended for **educational and research purposes**.
+
+The application should not be used as the sole method for industrial quality-control decisions.
+
+Deep-learning models can produce incorrect predictions, especially when analyzing images that differ from the training dataset.
+
+Professional inspection procedures and appropriate quality-control systems should be used in real manufacturing environments.
+
+---
+
+## Author
+
+**Swan Htet (Harry Li)**
+
+B.Sc. Information Technology Student  
+AI / Machine Learning Project
+
+GitHub: https://github.com/SwanHtetHarry
