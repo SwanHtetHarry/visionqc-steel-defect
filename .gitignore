@@ -1,0 +1,27 @@
+# Raw dataset
+data/train/
+data/validation/
+
+# Ignore experimental models
+models/*.pth
+
+# Keep final deployed model
+!models/final_resnet18_finetuned_best.pth
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
